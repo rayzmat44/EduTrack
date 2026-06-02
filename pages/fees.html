@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduTrack Uganda - Fees</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+
+    <div class="sidebar">
+      <h2>EduTrack</h2>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="students.html">Students</a>
+        <a href="attendance.html">Attendance</a>
+        <a href="fees.html">Fees</a>
+        <a href="exams.html">Exams</a>
+        <a href="teachers.html">Teachers</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Fees</h1>
+        <button id="addFeeBtn">+ Record Payment</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Amount (UGX)</th>
+            <th>Term</th>
+            <th>Date</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="feesTable">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal" id="feeModal">
+      <div class="modal-box">
+        <h3>Record Payment</h3>
+        <select id="studentSelect">
+          <option value="">Select Student</option>
+        </select>
+        <input type="number" id="amount" placeholder="Amount (UGX)" />
+        <select id="term">
+          <option value="">Select Term</option>
+          <option value="Term 1">Term 1</option>
+          <option value="Term 2">Term 2</option>
+          <option value="Term 3">Term 3</option>
+        </select>
+        <input type="date" id="feeDate" />
+        <input type="text" id="notes" placeholder="Notes (optional)" />
+        <button id="saveFeeBtn">Save Payment</button>
+        <button id="cancelFeeBtn">Cancel</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <script>
+      checkSession()
+
+      async function loadStudentsDropdown() {
+        const { data } = await db.from('students').select('id, first_name, last_name')
+        const select = document.getElementById('studentSelect')
+        data.forEach(student => {
+          const option = document.createElement('option')
+          option.value = student.id
+          option.textContent = student.first_name + ' ' + student.last_name
+          select.appendChild(option)
+        })
+      }
+
+      async function loadFees() {
+        const { data, error } = await db
+          .from('fees')
+          .select('*, students(first_name, last_name)')
+          .order('date', { ascending: false })
+
+        const tbody = document.getElementById('feesTable')
+
+        if (error || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No payments recorded yet.</td></tr>'
+          return
+        }
+
+        tbody.innerHTML = data.map(fee => `
+          <tr>
+            <td>${fee.students.first_name} ${fee.students.last_name}</td>
+            <td>${Number(fee.amount).toLocaleString()}</td>
+            <td>${fee.term}</td>
+            <td>${fee.date}</td>
+            <td>${fee.notes || '-'}</td>
+          </tr>
+        `).join('')
+      }
+
+      loadStudentsDropdown()
+      loadFees()
+
+      const modal = document.getElementById('feeModal')
+
+      document.getElementById('addFeeBtn').addEventListener('click', function() {
+        modal.classList.add('active')
+      })
+
+      document.getElementById('cancelFeeBtn').addEventListener('click', function() {
+        modal.classList.remove('active')
+      })
+
+      document.getElementById('saveFeeBtn').addEventListener('click', async function() {
+        const studentId = document.getElementById('studentSelect').value
+        const amount = document.getElementById('amount').value
+        const term = document.getElementById('term').value
+        const date = document.getElementById('feeDate').value
+        const notes = document.getElementById('notes').value
+
+        if (!studentId || !amount || !term || !date) {
+          alert('Please fill in all required fields.')
+          return
+        }
+
+        const { error } = await db.from('fees').insert([{
+          student_id: studentId,
+          amount: amount,
+          term: term,
+          date: date,
+          notes: notes
+        }])
+
+        if (error) {
+          alert('Error saving payment: ' + error.message)
+        } else {
+          modal.classList.remove('active')
+          loadFees()
+        }
+      })
+    </script>
+
+  </body>
+</html>

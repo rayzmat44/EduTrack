@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edutrack</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body class="login-body">
+
+    <div class="login-container">
+        <h1>Edutrack</h1>
+        <p>School Management Platform</p>
+
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="Email address" />
+            <input type="password" id="password" placeholder="Password" />
+            <button type="submit">Login</button>
+        </form>
+
+        <p id="message"></p>
+    </div>
+
+
+    <!-- SUPABASE -->
+     <script src="js/supabase.js"></script>
+    <!-- LOGIN FORM -->
+    <script>
+
+        const loginForm = document.getElementById('loginForm')
+        const message = document.getElementById('message')
+
+        loginForm.addEventListener('submit', async function(e) {
+            e.preventDefault()
+
+            const email = document.getElementById('email').value
+            const password = document.getElementById('password').value
+
+            const { data, error } = await db.auth.signInWithPassword({
+                email: email,
+                password: password
+            })
+
+            if (error) {
+                message.textContent = error.message
+            } else {
+                window.location.href = 'pages/dashboard.html'
+            }
+        })
+
+
+        console.log('Edutrack connected to supabase')
+    </script>
+</body>
+</html>

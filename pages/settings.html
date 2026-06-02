@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduTrack Uganda - Settings</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+
+    <div class="sidebar">
+      <h2>EduTrack</h2>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="students.html">Students</a>
+        <a href="attendance.html">Attendance</a>
+        <a href="fees.html">Fees</a>
+        <a href="exams.html">Exams</a>
+        <a href="teachers.html">Teachers</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h3>Settings</h3>
+      </div>
+
+      <div class="settings-card">
+        <h4>Account</h4>
+        <p>Logged in as: <strong id="userEmail"></strong></p>
+      </div>
+
+      <div class="settings-card">
+        <h4>Change Password</h4>
+        <input type="password" id="newPassword" placeholder="New password" />
+        <input type="password" id="confirmPassword" placeholder="Confirm new password" />
+        <button id="changePasswordBtn">Update Password</button>
+        <p id="passwordMessage"></p>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <script>
+      checkSession()
+
+      async function getUser() {
+        const { data } = await db.auth.getUser()
+        document.getElementById('userEmail').textContent = data.user.email
+      }
+
+      getUser()
+
+      document.getElementById('logoutBtn').addEventListener('click', async function() {
+        await db.auth.signOut()
+        window.location.href = '../index.html'
+      })
+
+      document.getElementById('changePasswordBtn').addEventListener('click', async function() {
+        const newPassword = document.getElementById('newPassword').value
+        const confirmPassword = document.getElementById('confirmPassword').value
+        const message = document.getElementById('passwordMessage')
+
+        if (!newPassword || !confirmPassword) {
+          message.textContent = 'Please fill in both fields.'
+          return
+        }
+
+        if (newPassword !== confirmPassword) {
+          message.textContent = 'Passwords do not match.'
+          return
+        }
+
+        const { error } = await db.auth.updateUser({ password: newPassword })
+
+        if (error) {
+          message.textContent = 'Error: ' + error.message
+        } else {
+          message.textContent = 'Password updated successfully!'
+          document.getElementById('newPassword').value = ''
+          document.getElementById('confirmPassword').value = ''
+        }
+      })
+    </script>
+
+  </body>
+</html>

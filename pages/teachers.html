@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduTrack Uganda - Teachers</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+
+    <div class="sidebar">
+      <h2>EduTrack</h2>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="students.html">Students</a>
+        <a href="attendance.html">Attendance</a>
+        <a href="fees.html">Fees</a>
+        <a href="exams.html">Exams</a>
+        <a href="teachers.html">Teachers</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Teachers</h1>
+        <button id="addTeacherBtn">+ Add Teacher</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Subject</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Joined</th>
+          </tr>
+        </thead>
+        <tbody id="teachersTable">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal" id="teacherModal">
+      <div class="modal-box">
+        <h3>Add Teacher</h3>
+        <input type="text" id="teacherFirstName" placeholder="First Name" />
+        <input type="text" id="teacherLastName" placeholder="Last Name" />
+        <input type="text" id="teacherSubject" placeholder="Subject (e.g. Mathematics)" />
+        <input type="text" id="teacherPhone" placeholder="Phone Number" />
+        <input type="email" id="teacherEmail" placeholder="Email Address" />
+        <input type="date" id="joinedDate" />
+        <button id="saveTeacherBtn">Save Teacher</button>
+        <button id="cancelTeacherBtn">Cancel</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <script>
+      checkSession()
+
+      async function loadTeachers() {
+        const { data, error } = await db
+          .from('teachers')
+          .select('*')
+          .order('first_name', { ascending: true })
+
+        const tbody = document.getElementById('teachersTable')
+
+        if (error || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5">No teachers added yet.</td></tr>'
+          return
+        }
+
+        tbody.innerHTML = data.map(teacher => `
+          <tr>
+            <td>${teacher.first_name} ${teacher.last_name}</td>
+            <td>${teacher.subject}</td>
+            <td>${teacher.phone}</td>
+            <td>${teacher.email}</td>
+            <td>${teacher.joined_date}</td>
+          </tr>
+        `).join('')
+      }
+
+      loadTeachers()
+
+      const modal = document.getElementById('teacherModal')
+
+      document.getElementById('addTeacherBtn').addEventListener('click', function() {
+        modal.classList.add('active')
+      })
+
+      document.getElementById('cancelTeacherBtn').addEventListener('click', function() {
+        modal.classList.remove('active')
+      })
+
+      document.getElementById('saveTeacherBtn').addEventListener('click', async function() {
+        const firstName = document.getElementById('teacherFirstName').value
+        const lastName = document.getElementById('teacherLastName').value
+        const subject = document.getElementById('teacherSubject').value
+        const phone = document.getElementById('teacherPhone').value
+        const email = document.getElementById('teacherEmail').value
+        const joinedDate = document.getElementById('joinedDate').value
+
+        if (!firstName || !lastName || !subject || !phone || !joinedDate) {
+          alert('Please fill in all required fields.')
+          return
+        }
+
+        const { error } = await db.from('teachers').insert([{
+          first_name: firstName,
+          last_name: lastName,
+          subject: subject,
+          phone: phone,
+          email: email,
+          joined_date: joinedDate
+        }])
+
+        if (error) {
+          alert('Error saving teacher: ' + error.message)
+        } else {
+          modal.classList.remove('active')
+          loadTeachers()
+        }
+      })
+    </script>
+
+  </body>
+</html>

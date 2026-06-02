@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduTrack Uganda - Exams</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+
+    <div class="sidebar">
+      <h2>EduTrack</h2>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="students.html">Students</a>
+        <a href="attendance.html">Attendance</a>
+        <a href="fees.html">Fees</a>
+        <a href="exams.html">Exams</a>
+        <a href="teachers.html">Teachers</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Exams</h1>
+        <button id="addExamBtn">+ Record Marks</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Student</th>
+            <th>Subject</th>
+            <th>Term</th>
+            <th>Marks</th>
+            <th>Out of</th>
+            <th>Percentage</th>
+          </tr>
+        </thead>
+        <tbody id="examsTable">
+          <tr><td colspan="6">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal" id="examModal">
+      <div class="modal-box">
+        <h3>Record Marks</h3>
+        <select id="examStudentSelect">
+          <option value="">Select Student</option>
+        </select>
+        <input type="text" id="subject" placeholder="Subject (e.g. Mathematics)" />
+        <select id="examTerm">
+          <option value="">Select Term</option>
+          <option value="Term 1">Term 1</option>
+          <option value="Term 2">Term 2</option>
+          <option value="Term 3">Term 3</option>
+        </select>
+        <input type="number" id="marks" placeholder="Marks scored" />
+        <input type="number" id="maxMarks" placeholder="Out of (e.g. 100)" />
+        <input type="date" id="examDate" />
+        <button id="saveExamBtn">Save Marks</button>
+        <button id="cancelExamBtn">Cancel</button>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="../js/supabase.js"></script>
+    <script>
+      checkSession()
+
+      async function loadStudentsDropdown() {
+        const { data } = await db.from('students').select('id, first_name, last_name')
+        const select = document.getElementById('examStudentSelect')
+        data.forEach(student => {
+          const option = document.createElement('option')
+          option.value = student.id
+          option.textContent = student.first_name + ' ' + student.last_name
+          select.appendChild(option)
+        })
+      }
+
+      async function loadExams() {
+        const { data, error } = await db
+          .from('exams')
+          .select('*, students(first_name, last_name)')
+          .order('exam_date', { ascending: false })
+
+        const tbody = document.getElementById('examsTable')
+
+        if (error || data.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6">No exam records yet.</td></tr>'
+          return
+        }
+
+        tbody.innerHTML = data.map(exam => {
+          const percentage = ((exam.marks / exam.max_marks) * 100).toFixed(1)
+          return `
+            <tr>
+              <td>${exam.students.first_name} ${exam.students.last_name}</td>
+              <td>${exam.subject}</td>
+              <td>${exam.term}</td>
+              <td>${exam.marks}</td>
+              <td>${exam.max_marks}</td>
+              <td>${percentage}%</td>
+            </tr>
+          `
+        }).join('')
+      }
+
+      loadStudentsDropdown()
+      loadExams()
+
+      const modal = document.getElementById('examModal')
+
+      document.getElementById('addExamBtn').addEventListener('click', function() {
+        modal.classList.add('active')
+      })
+
+      document.getElementById('cancelExamBtn').addEventListener('click', function() {
+        modal.classList.remove('active')
+      })
+
+      document.getElementById('saveExamBtn').addEventListener('click', async function() {
+        const studentId = document.getElementById('examStudentSelect').value
+        const subject = document.getElementById('subject').value
+        const term = document.getElementById('examTerm').value
+        const marks = document.getElementById('marks').value
+        const maxMarks = document.getElementById('maxMarks').value
+        const examDate = document.getElementById('examDate').value
+
+        if (!studentId || !subject || !term || !marks || !maxMarks || !examDate) {
+          alert('Please fill in all fields.')
+          return
+        }
+
+        const { error } = await db.from('exams').insert([{
+          student_id: studentId,
+          subject: subject,
+          term: term,
+          marks: marks,
+          max_marks: maxMarks,
+          exam_date: examDate
+        }])
+
+        if (error) {
+          alert('Error saving marks: ' + error.message)
+        } else {
+          modal.classList.remove('active')
+          loadExams()
+        }
+      })
+    </script>
+
+  </body>
+</html>

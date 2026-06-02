@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduTrack Uganda - Attendance</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+
+    <div class="sidebar">
+  <h2>EduTrack</h2>
+  <nav>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="students.html">Students</a>
+    <a href="attendance.html">Attendance</a>
+    <a href="fees.html">Fees</a>
+    <a href="exams.html">Exams</a>
+    <a href="teachers.html">Teachers</a>
+    <a href="settings.html">Settings</a>
+  </nav>
+  <button id="logoutBtn">Logout</button>
+</div>
+
+<div class="main-content">
+  <div class="topbar">
+    <h1>Attendance</h1>
+    <input type="date" id="attendanceDate" />
+  </div>
+
+  <div class="attendance-wrap">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Student Name</th>
+          <th>Class</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="attendanceTable">
+        <tr><td colspan="3">Select a date to load students.</td></tr>
+      </tbody>
+    </table>
+
+    <div class="attendance-footer">
+      <button id="saveAttendanceBtn">Save Attendance</button>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase.js"></script>
+<script>
+  checkSession()
+
+  let students = []
+
+  document.getElementById('attendanceDate').addEventListener('change', async function() {
+    const date = this.value
+    const tbody = document.getElementById('attendanceTable')
+    tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>'
+
+    const { data, error } = await db.from('students').select('*')
+
+    if (error || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3">No students found.</td></tr>'
+      return
+    }
+
+    students = data
+
+    tbody.innerHTML = data.map(student => `
+      <tr>
+        <td>${student.first_name} ${student.last_name}</td>
+        <td>${student.class_name}</td>
+        <td>
+          <select id="status_${student.id}">
+            <option value="Present">Present</option>
+            <option value="Absent">Absent</option>
+          </select>
+        </td>
+      </tr>
+    `).join('')
+  })
+
+  document.getElementById('saveAttendanceBtn').addEventListener('click', async function() {
+    const date = document.getElementById('attendanceDate').value
+
+    if (!date) {
+      alert('Please select a date first.')
+      return
+    }
+
+    const records = students.map(student => ({
+      student_id: student.id,
+      date: date,
+      status: document.getElementById('status_' + student.id).value
+    }))
+
+    const { error } = await db.from('attendance').insert(records)
+
+    if (error) {
+      alert('Error saving attendance: ' + error.message)
+    } else {
+      alert('Attendance saved successfully!')
+    }
+  })
+</script>
+  </body>
+</html>

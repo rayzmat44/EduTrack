@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EduTrack Uganda - Students</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+
+    <div class="sidebar">
+      <h2>EduTrack</h2>
+      <nav>
+        <a href="dashboard.html">Dashboard</a>
+        <a href="students.html">Students</a>
+        <a href="attendance.html">Attendance</a>
+        <a href="fees.html">Fees</a>
+        <a href="exams.html">Exams</a>
+        <a href="teachers.html">Teachers</a>
+        <a href="settings.html">Settings</a>
+      </nav>
+      <button id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <h1>Students</h1>
+        <button id="addStudentBtn">+ Add Student</button>
+      </div>
+
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Class</th>
+            <th>Gender</th>
+            <th>Guardian</th>
+            <th>Guardian Phone</th>
+          </tr>
+        </thead>
+        <tbody id="studentsTable">
+          <tr><td colspan="5">Loading...</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="modal" id="studentModal">
+      <div class="modal-box">
+        <h3>Add Student</h3>
+
+        <input type="text" id="firstName" placeholder="First Name" />
+        <input type="text" id="lastName" placeholder="Last Name" />
+        <input type="date" id="dob" placeholder="Date of Birth" />
+        <select id="gender">
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        <input type="text" id="className" placeholder="Class (e.g. S1A)" />
+        <input type="text" id="guardianName" placeholder="Guardian Name" />
+        <input type="text" id="guardianPhone" placeholder="Guardian Phone" />
+
+        <button id="saveStudentBtn">Save Student</button>
+        <button id="cancelBtn">Cancel</button>
+      </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase.js"></script>
+<script>
+
+async function checkSession() {
+  const { data } = await db.auth.getSession()
+  if (!data.session) {
+    window.location.href = '../index.html'
+  }
+}
+  checkSession()
+
+  async function loadStudents() {
+    const { data, error } = await db.from('students').select('*')
+
+    const tbody = document.getElementById('studentsTable')
+
+    if (error) {
+      tbody.innerHTML = '<tr><td colspan="5">Error loading students.</td></tr>'
+      return
+    }
+
+    if (data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5">No students yet.</td></tr>'
+      return
+    }
+
+    tbody.innerHTML = data.map(student => `
+      <tr>
+        <td>${student.first_name} ${student.last_name}</td>
+        <td>${student.class_name}</td>
+        <td>${student.gender}</td>
+        <td>${student.guardian_name}</td>
+        <td>${student.guardian_phone}</td>
+      </tr>
+    `).join('')
+  }
+
+  loadStudents()
+
+  const modal = document.getElementById('studentModal')
+
+  document.getElementById('addStudentBtn').addEventListener('click', function() {
+    modal.classList.add('active')
+  })
+
+  document.getElementById('cancelBtn').addEventListener('click', function() {
+    modal.classList.remove('active')
+  })
+
+  document.getElementById('saveStudentBtn').addEventListener('click', async function() {
+    const firstName = document.getElementById('firstName').value
+    const lastName = document.getElementById('lastName').value
+    const dob = document.getElementById('dob').value
+    const gender = document.getElementById('gender').value
+    const className = document.getElementById('className').value
+    const guardianName = document.getElementById('guardianName').value
+    const guardianPhone = document.getElementById('guardianPhone').value
+
+    const { error } = await db.from('students').insert([{
+      first_name: firstName,
+      last_name: lastName,
+      date_of_birth: dob,
+      gender: gender,
+      class_name: className,
+      guardian_name: guardianName,
+      guardian_phone: guardianPhone
+    }])
+
+    if (error) {
+      alert('Error saving student: ' + error.message)
+    } else {
+      modal.classList.remove('active')
+      loadStudents()
+    }
+  })
+</script>
+
+  </body>
+</html>
