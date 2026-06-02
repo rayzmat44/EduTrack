@@ -95,4 +95,4 @@ EduTrack is a comprehensive School Management System designed to digitize and st
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the PERSONAL License.
