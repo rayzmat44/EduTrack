@@ -59,9 +59,9 @@ EduTrack is a comprehensive School Management System designed to digitize and st
 
 ## Technology Stack
 
-* Frontend: React / Next.js
+* Frontend: React / Next.j
 * Backend: Node.js & Express
-* Database: PostgreSQL / MySQL
+* Database: Supabase
 * Authentication: JWT
 * API Architecture: RESTful APIs
 
